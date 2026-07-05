@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: MIT
 
+#ifdef HAVE_LZO
 #include <lzo/lzoconf.h>
 #include <lzo/lzo1x.h>
+#endif
 #include <zlib.h>
 #include <zstd.h>
 #include <sys/param.h>
@@ -79,6 +81,7 @@ out:
 	return ret;
 }
 
+#ifdef HAVE_LZO
 #define LZO_LEN		(4)
 
 static inline u32 read_compress_length(const char *buf)
@@ -186,6 +189,14 @@ static int decompress_lzo(const struct btrfs_fs_info *fs_info, char *input,
 		memset(output + cur_out, 0, output_len - cur_out);
 	return 0;
 }
+#else
+static int decompress_lzo(const struct btrfs_fs_info *fs_info, char *input,
+			  u32 input_len, char *output, u32 output_len)
+{
+	error("lzo compression unsupported in this build");
+	return -EOPNOTSUPP;
+}
+#endif
 
 int btrfs_decompress(const struct btrfs_fs_info *fs_info,
 		     char *input, u32 input_len,
